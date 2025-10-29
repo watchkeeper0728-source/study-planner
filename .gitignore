@@ -49,14 +49,17 @@ next-env.d.ts
 
 # vitest
 /coverage
-/vitest.config.ts.timestamp-*
+/vitest.config.ts.timestamp*
 
-
-
-
-
-
-
-
-
-
+# プロジェクト固有の除外
+folder-rules-sync/
+othello-app/
+splitfair/
+*.xlsx
+*.py
+*.msi
+*.zip
+"study log/"
+00_zenkoku_all.zip
+"法人番号付与_ローカル版.py"
+"【RIETI共有】中小企業_ローデータ.xlsx"
