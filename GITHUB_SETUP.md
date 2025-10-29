@@ -79,7 +79,9 @@ vercel --prod
 2. 「Storage」タブをクリック
 3. 「Create Database」→「Postgres」を選択
 4. データベース名を入力（例: `study-planner-db`）
-5. リージョンを選択（推奨: `Tokyo (nrt1)`）
+5. リージョンを選択：
+   - 利用可能なリージョンから選択（例: `Tokyo`、`Tokyo (Japan)`、またはデフォルトのリージョン）
+   - リージョンが表示されない場合は、デフォルトのリージョンを使用
 6. データベース作成後、「.env.local」タブの接続文字列をコピー
 7. プロジェクトの「Settings」→「Environment Variables」で`DATABASE_URL`を設定
 8. マイグレーションを実行：
