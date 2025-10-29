@@ -94,14 +94,14 @@ export function PastExamsTable({
         schoolName: formData.schoolName,
         year: formData.year,
         examNumber: formData.examNumber,
-        mathScore: formData.mathScore ? parseInt(formData.mathScore) : undefined,
-        mathPassing: formData.mathPassing ? parseInt(formData.mathPassing) : undefined,
-        japaneseScore: formData.japaneseScore ? parseInt(formData.japaneseScore) : undefined,
-        japanesePassing: formData.japanesePassing ? parseInt(formData.japanesePassing) : undefined,
-        scienceScore: formData.scienceScore ? parseInt(formData.scienceScore) : undefined,
-        sciencePassing: formData.sciencePassing ? parseInt(formData.sciencePassing) : undefined,
-        socialScore: formData.socialScore ? parseInt(formData.socialScore) : undefined,
-        socialPassing: formData.socialPassing ? parseInt(formData.socialPassing) : undefined,
+        mathScore: formData.mathScore ? parseInt(formData.mathScore) : null,
+        mathPassing: formData.mathPassing ? parseInt(formData.mathPassing) : null,
+        japaneseScore: formData.japaneseScore ? parseInt(formData.japaneseScore) : null,
+        japanesePassing: formData.japanesePassing ? parseInt(formData.japanesePassing) : null,
+        scienceScore: formData.scienceScore ? parseInt(formData.scienceScore) : null,
+        sciencePassing: formData.sciencePassing ? parseInt(formData.sciencePassing) : null,
+        socialScore: formData.socialScore ? parseInt(formData.socialScore) : null,
+        socialPassing: formData.socialPassing ? parseInt(formData.socialPassing) : null,
       };
 
       if (editingExam) {

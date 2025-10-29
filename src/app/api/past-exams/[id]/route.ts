@@ -6,7 +6,7 @@ import { pastExamSchema } from "@/lib/validators";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,8 +18,9 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = pastExamSchema.partial().parse(body);
 
+    const resolvedParams = await params;
     const pastExam = await prisma.pastExam.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
     });
 
     if (!pastExam) {
@@ -31,7 +32,7 @@ export async function PATCH(
     }
 
     const updatedPastExam = await prisma.pastExam.update({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       data: validatedData,
     });
 
@@ -54,7 +55,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -63,8 +64,9 @@ export async function DELETE(
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
+    const resolvedParams = await params;
     const pastExam = await prisma.pastExam.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
     });
 
     if (!pastExam) {
@@ -76,7 +78,7 @@ export async function DELETE(
     }
 
     await prisma.pastExam.delete({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
     });
 
     return NextResponse.json({ message: "削除しました" });
