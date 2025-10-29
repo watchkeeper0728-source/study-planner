@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Subject {
+  MATH
+  JAPANESE
+  SCIENCE
+  SOCIAL
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  tz            String    @default("Asia/Tokyo")
+  gcalId        String?   // 専用カレンダーID
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  todos         Todo[]
+  plans         Plan[]
+  logs          StudyLog[]
+  tests         Test[]
+  reflections   Reflection[]
+  pastExams     PastExam[]
+
+  @@map("users")
+}
+
+model Todo {
+  id          String   @id @default(cuid())
+  userId      String
+  subject     Subject
+  title       String
+  notes       String?
+  type        String   // "FIXED" | "RECURRING"
+  rrule       String?  // 繰り返し（RFC5545。例：FREQ=WEEKLY;BYDAY=MO,TH）
+  durationMin Int      @default(60)
+  priority    Int      @default(2) // 1高 - 3低
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plans       Plan[]
+
+  @@map("todos")
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  userId      String
+  subject     Subject
+  todoId      String?
+  title       String
+  start       DateTime
+  end         DateTime
+  gcalEventId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  todo        Todo?    @relation(fields: [todoId], references: [id], onDelete: SetNull)
+  logs        StudyLog[]
+
+  @@index([userId, start, end])
+  @@map("plans")
+}
+
+model StudyLog {
+  id        String   @id @default(cuid())
+  userId    String
+  subject   Subject
+  planId    String?
+  title     String
+  date      DateTime   // 日付単位で管理（00:00基準）
+  minutes   Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      Plan?    @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@map("study_logs")
+}
+
+model Test {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reflections Reflection[]
+
+  @@map("tests")
+}
+
+model Reflection {
+  id         String   @id @default(cuid())
+  userId     String
+  testId     String
+  subject    Subject
+  score      Int?
+  deviation  Float?
+  approach   String?    // 観点1: テストの受け方
+  learning   String?    // 観点2: 学習内容
+  createdAt  DateTime   @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test       Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@index([userId, subject, createdAt])
+  @@map("reflections")
+}
+
+model PastExam {
+  id           String   @id @default(cuid())
+  userId       String
+  schoolName   String   // 学校名
+  year         Int      // 年
+  examNumber   Int      // 回数
+  mathScore    Int?     // 算数のスコア
+  mathPassing  Int?     // 算数の合格点
+  japaneseScore Int?    // 国語のスコア
+  japanesePassing Int?  // 国語の合格点
+  scienceScore Int?     // 理科のスコア
+  sciencePassing Int?   // 理科の合格点
+  socialScore  Int?     // 社会のスコア
+  socialPassing Int?     // 社会の合格点
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, schoolName, year, examNumber])
+  @@map("past_exams")
+}

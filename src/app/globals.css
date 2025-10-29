@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+  body {
+    @apply bg-white text-gray-900;
+  }
+}
+
+/* 印刷用スタイル */
+@media print {
+  /* 不要な要素を非表示 */
+  nav,
+  button:not(.print-keep),
+  aside,
+  .mobile-nav,
+  .top-nav,
+  .test-countdown,
+  .study-todo {
+    display: none !important;
+  }
+
+  /* カレンダーのみを印刷 */
+  .calendar-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* A4縦向きのサイズ */
+  @page {
+    size: A4 portrait;
+    margin: 0.8cm;
+  }
+
+  /* ボディの背景色を白に */
+  body {
+    background: white !important;
+  }
+
+  /* メインコンテナーの幅を広げる */
+  main {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* FullCalendarの印刷スタイル */
+  .fc {
+    font-size: 0.75em !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .fc-view-harness {
+    width: 100% !important;
+  }
+
+  .fc-scrollgrid {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .fc-col-header-cell,
+  .fc-daygrid-day,
+  .fc-timegrid-col {
+    width: auto !important;
+    min-width: 12% !important;
+  }
+
+  .fc-col-header {
+    background: #f3f4f6 !important;
+  }
+
+  .fc-event {
+    padding: 3px 6px !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.3 !important;
+  }
+
+  .fc-event-title {
+    font-size: 0.85em !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .fc-timegrid-slot {
+    min-height: 2em !important;
+  }
+
+  /* イベントの高さを調整 */
+  .fc-event-time,
+  .fc-event-title-container {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+  }
+}
+
+
