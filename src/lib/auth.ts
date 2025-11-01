@@ -38,6 +38,7 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   pages: {
     signIn: "/auth/signin",
+    error: "/auth/error",
   },
   providers: [
     GoogleProvider({
@@ -77,16 +78,21 @@ export const authOptions: NextAuthOptions = {
     },
     async signIn({ account, profile, user }) {
       // サインイン時のデバッグ情報
-      console.log("[AUTH DEBUG] ========== SignIn callback triggered ==========");
-      console.log("[AUTH DEBUG] User:", user?.email);
-      console.log("[AUTH DEBUG] Account provider:", account?.provider);
-      console.log("[AUTH DEBUG] Profile email:", profile?.email);
-      if (account) {
-        console.log("[AUTH DEBUG] Account type:", account.type);
-        console.log("[AUTH DEBUG] Account providerAccountId:", account.providerAccountId);
+      try {
+        console.log("[AUTH DEBUG] ========== SignIn callback triggered ==========");
+        console.log("[AUTH DEBUG] User:", user?.email || "NO USER");
+        console.log("[AUTH DEBUG] Account provider:", account?.provider || "NO ACCOUNT");
+        console.log("[AUTH DEBUG] Profile email:", profile?.email || "NO PROFILE");
+        if (account) {
+          console.log("[AUTH DEBUG] Account type:", account.type);
+          console.log("[AUTH DEBUG] Account providerAccountId:", account.providerAccountId);
+        }
+        console.log("[AUTH DEBUG] ==============================================");
+        return true;
+      } catch (error) {
+        console.error("[AUTH DEBUG] SignIn callback ERROR:", error);
+        return false;
       }
-      console.log("[AUTH DEBUG] ==============================================");
-      return true;
     },
     async jwt({ token, user, account }) {
       // データベースセッション戦略の場合でも、jwtコールバックが呼ばれることがある
@@ -102,6 +108,45 @@ export const authOptions: NextAuthOptions = {
   },
   secret: nextAuthSecret,
   debug: true, // デバッグモードを有効化
+  events: {
+    async signIn({ user, account, profile }) {
+      console.log("[AUTH DEBUG] ========== Event: signIn ==========");
+      console.log("[AUTH DEBUG] Event - User email:", user?.email);
+      console.log("[AUTH DEBUG] Event - Account provider:", account?.provider);
+      console.log("[AUTH DEBUG] Event - Profile email:", profile?.email);
+      console.log("[AUTH DEBUG] =====================================");
+    },
+    async createUser({ user }) {
+      console.log("[AUTH DEBUG] ========== Event: createUser ==========");
+      console.log("[AUTH DEBUG] Event - Created user:", user?.email, user?.id);
+      console.log("[AUTH DEBUG] =========================================");
+    },
+    async linkAccount({ user, account }) {
+      console.log("[AUTH DEBUG] ========== Event: linkAccount ==========");
+      console.log("[AUTH DEBUG] Event - User:", user?.email);
+      console.log("[AUTH DEBUG] Event - Account provider:", account?.provider);
+      console.log("[AUTH DEBUG] ==========================================");
+    },
+    async createSession({ session }) {
+      console.log("[AUTH DEBUG] ========== Event: createSession ==========");
+      console.log("[AUTH DEBUG] Event - Session user:", session?.user?.email);
+      console.log("[AUTH DEBUG] ===========================================");
+    },
+    async signInError({ error }) {
+      console.error("[AUTH DEBUG] ========== Event: signInError ==========");
+      console.error("[AUTH DEBUG] Event - Error:", error);
+      console.error("[AUTH DEBUG] Event - Error message:", error?.message);
+      console.error("[AUTH DEBUG] Event - Error stack:", error?.stack);
+      console.error("[AUTH DEBUG] Event - Full error object:", JSON.stringify(error, null, 2));
+      console.error("[AUTH DEBUG] ==========================================");
+    },
+    async sessionError({ error }) {
+      console.error("[AUTH DEBUG] ========== Event: sessionError ==========");
+      console.error("[AUTH DEBUG] Event - Error:", error);
+      console.error("[AUTH DEBUG] Event - Error message:", error?.message);
+      console.error("[AUTH DEBUG] ==========================================");
+    },
+  },
 };
 
 export async function auth() {
