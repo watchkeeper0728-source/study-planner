@@ -78,6 +78,18 @@ const wrappedAdapter = {
       throw error;
     }
   },
+  async getUserByAccount(account: any) {
+    try {
+      console.log("[AUTH DEBUG] Adapter getUserByAccount called with provider:", account?.provider, "providerAccountId:", account?.providerAccountId);
+      if (!baseAdapter.getUserByAccount) throw new Error("getUserByAccount method not found");
+      const result = await baseAdapter.getUserByAccount(account);
+      console.log("[AUTH DEBUG] Adapter getUserByAccount success:", result?.email || "NOT FOUND");
+      return result;
+    } catch (error: any) {
+      console.error("[AUTH DEBUG] Adapter getUserByAccount ERROR:", error);
+      throw error;
+    }
+  },
   async linkAccount(account: any) {
     try {
       console.log("[AUTH DEBUG] Adapter linkAccount called with provider:", account?.provider);
