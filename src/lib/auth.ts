@@ -34,8 +34,82 @@ console.log("[AUTH DEBUG] NEXTAUTH_URL:", nextAuthUrl);
 console.log("[AUTH DEBUG] Expected redirect URI:", `${nextAuthUrl}/api/auth/callback/google`);
 console.log("[AUTH DEBUG] ========================================");
 
+// PrismaAdapterをラップしてエラーをログに記録
+const baseAdapter = PrismaAdapter(prisma);
+
+// アダプターの各メソッドをラップしてエラーをキャッチ
+const wrappedAdapter = {
+  ...baseAdapter,
+  async createUser(user: any) {
+    try {
+      console.log("[AUTH DEBUG] Adapter createUser called with:", user?.email);
+      if (!baseAdapter.createUser) throw new Error("createUser method not found");
+      const result = await baseAdapter.createUser(user);
+      console.log("[AUTH DEBUG] Adapter createUser success, user id:", result?.id);
+      return result;
+    } catch (error: any) {
+      console.error("[AUTH DEBUG] Adapter createUser ERROR:", error);
+      console.error("[AUTH DEBUG] Adapter createUser ERROR message:", error?.message);
+      console.error("[AUTH DEBUG] Adapter createUser ERROR stack:", error?.stack);
+      throw error;
+    }
+  },
+  async getUser(id: string) {
+    try {
+      console.log("[AUTH DEBUG] Adapter getUser called with id:", id);
+      if (!baseAdapter.getUser) throw new Error("getUser method not found");
+      const result = await baseAdapter.getUser(id);
+      console.log("[AUTH DEBUG] Adapter getUser success:", result?.email || "NOT FOUND");
+      return result;
+    } catch (error: any) {
+      console.error("[AUTH DEBUG] Adapter getUser ERROR:", error);
+      throw error;
+    }
+  },
+  async getUserByEmail(email: string) {
+    try {
+      console.log("[AUTH DEBUG] Adapter getUserByEmail called with:", email);
+      if (!baseAdapter.getUserByEmail) throw new Error("getUserByEmail method not found");
+      const result = await baseAdapter.getUserByEmail(email);
+      console.log("[AUTH DEBUG] Adapter getUserByEmail success:", result?.email || "NOT FOUND");
+      return result;
+    } catch (error: any) {
+      console.error("[AUTH DEBUG] Adapter getUserByEmail ERROR:", error);
+      throw error;
+    }
+  },
+  async linkAccount(account: any) {
+    try {
+      console.log("[AUTH DEBUG] Adapter linkAccount called with provider:", account?.provider);
+      if (!baseAdapter.linkAccount) throw new Error("linkAccount method not found");
+      const result = await baseAdapter.linkAccount(account);
+      console.log("[AUTH DEBUG] Adapter linkAccount success");
+      return result;
+    } catch (error: any) {
+      console.error("[AUTH DEBUG] Adapter linkAccount ERROR:", error);
+      console.error("[AUTH DEBUG] Adapter linkAccount ERROR message:", error?.message);
+      console.error("[AUTH DEBUG] Adapter linkAccount ERROR stack:", error?.stack);
+      throw error;
+    }
+  },
+  async createSession(session: any) {
+    try {
+      console.log("[AUTH DEBUG] Adapter createSession called with user id:", session?.userId);
+      if (!baseAdapter.createSession) throw new Error("createSession method not found");
+      const result = await baseAdapter.createSession(session);
+      console.log("[AUTH DEBUG] Adapter createSession success, session token:", result?.sessionToken?.substring(0, 20) + "...");
+      return result;
+    } catch (error: any) {
+      console.error("[AUTH DEBUG] Adapter createSession ERROR:", error);
+      console.error("[AUTH DEBUG] Adapter createSession ERROR message:", error?.message);
+      console.error("[AUTH DEBUG] Adapter createSession ERROR stack:", error?.stack);
+      throw error;
+    }
+  },
+};
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: wrappedAdapter as any,
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
@@ -126,25 +200,6 @@ export const authOptions: NextAuthOptions = {
       console.log("[AUTH DEBUG] Event - User:", user?.email);
       console.log("[AUTH DEBUG] Event - Account provider:", account?.provider);
       console.log("[AUTH DEBUG] ==========================================");
-    },
-    async createSession({ session }) {
-      console.log("[AUTH DEBUG] ========== Event: createSession ==========");
-      console.log("[AUTH DEBUG] Event - Session user:", session?.user?.email);
-      console.log("[AUTH DEBUG] ===========================================");
-    },
-    async signInError({ error }) {
-      console.error("[AUTH DEBUG] ========== Event: signInError ==========");
-      console.error("[AUTH DEBUG] Event - Error:", error);
-      console.error("[AUTH DEBUG] Event - Error message:", error?.message);
-      console.error("[AUTH DEBUG] Event - Error stack:", error?.stack);
-      console.error("[AUTH DEBUG] Event - Full error object:", JSON.stringify(error, null, 2));
-      console.error("[AUTH DEBUG] ==========================================");
-    },
-    async sessionError({ error }) {
-      console.error("[AUTH DEBUG] ========== Event: sessionError ==========");
-      console.error("[AUTH DEBUG] Event - Error:", error);
-      console.error("[AUTH DEBUG] Event - Error message:", error?.message);
-      console.error("[AUTH DEBUG] ==========================================");
     },
   },
 };
