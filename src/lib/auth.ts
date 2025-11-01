@@ -15,9 +15,9 @@ if (!googleClientId || !googleClientSecret) {
 }
 
 // クライアントIDの一部をログ出力（デバッグ用、後で削除推奨）
-if (process.env.NODE_ENV !== "production") {
-  console.log("Using GOOGLE_CLIENT_ID:", googleClientId.substring(0, 30) + "...");
-}
+// 一時的に本番環境でも出力して確認
+console.log("[AUTH DEBUG] GOOGLE_CLIENT_ID starts with:", googleClientId.substring(0, 35) + "...");
+console.log("[AUTH DEBUG] Expected ID should start with: 259584654504-h86ohpa6trnsif0falig3qssg55r7aap");
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
