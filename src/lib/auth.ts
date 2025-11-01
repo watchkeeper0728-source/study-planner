@@ -1,4 +1,4 @@
-import { NextAuthOptions } from "next-auth";
+import { NextAuthOptions, getServerSession } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "./prisma";
@@ -6,49 +6,35 @@ import { prisma } from "./prisma";
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   pages: {
-    signIn: "/",
+    signIn: "/auth/signin",
   },
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
       authorization: {
         params: {
-          scope: "openid email profile",
+          scope: "openid email profile https://www.googleapis.com/auth/calendar",
           prompt: "consent",
-          access_type: "online",
+          access_type: "offline",
         },
       },
     }),
   ],
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      // カスタムリダイレクトURLがある場合はそれを使用
-      if (url.startsWith(baseUrl)) return url;
-      // デフォルトはトップページにリダイレクト
-      return baseUrl;
-    },
-    async session({ session, token }) {
-      // JWTストラテジー使用時はtokenを使用
-      if (token && session.user) {
-        session.user.id = token.id as string;
+    async session({ session, user }) {
+      if (session.user && user) {
+        session.user.id = user.id;
       }
       return session;
     },
-    async jwt({ token, user, account }) {
-      // 初回ログイン時
-      if (user) {
-        token.id = user.id;
-      }
-      // Googleログイン時
-      if (account) {
-        token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token;
-      }
-      return token;
-    },
   },
   session: {
-    strategy: "jwt",
+    strategy: "database",
   },
+  secret: process.env.NEXTAUTH_SECRET,
 };
+
+export function auth() {
+  return getServerSession(authOptions);
+}
