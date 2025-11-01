@@ -57,24 +57,44 @@ export const authOptions: NextAuthOptions = {
       // リダイレクトURIの確認
       console.log("[AUTH DEBUG] Redirect callback - url:", url, "baseUrl:", baseUrl);
       // カスタムリダイレクトURLがある場合はそれを使用
-      if (url.startsWith(baseUrl)) return url;
+      if (url.startsWith(baseUrl)) {
+        console.log("[AUTH DEBUG] Redirecting to custom URL:", url);
+        return url;
+      }
       // デフォルトはトップページにリダイレクト
+      console.log("[AUTH DEBUG] Redirecting to baseUrl:", baseUrl);
       return baseUrl;
     },
     async session({ session, user }) {
+      console.log("[AUTH DEBUG] Session callback - user exists:", !!user, "session user exists:", !!session.user);
       if (session.user && user) {
         session.user.id = user.id;
+        console.log("[AUTH DEBUG] Session user ID set to:", user.id);
+      } else {
+        console.log("[AUTH DEBUG] WARNING: Session or user is missing!");
       }
       return session;
     },
-    async signIn({ account, profile }) {
+    async signIn({ account, profile, user }) {
       // サインイン時のデバッグ情報
-      console.log("[AUTH DEBUG] SignIn callback triggered");
+      console.log("[AUTH DEBUG] ========== SignIn callback triggered ==========");
+      console.log("[AUTH DEBUG] User:", user?.email);
+      console.log("[AUTH DEBUG] Account provider:", account?.provider);
+      console.log("[AUTH DEBUG] Profile email:", profile?.email);
       if (account) {
-        console.log("[AUTH DEBUG] Provider:", account.provider);
-        console.log("[AUTH DEBUG] Using Client ID:", googleClientId.substring(0, 40) + "...");
+        console.log("[AUTH DEBUG] Account type:", account.type);
+        console.log("[AUTH DEBUG] Account providerAccountId:", account.providerAccountId);
       }
+      console.log("[AUTH DEBUG] ==============================================");
       return true;
+    },
+    async jwt({ token, user, account }) {
+      // データベースセッション戦略の場合でも、jwtコールバックが呼ばれることがある
+      console.log("[AUTH DEBUG] JWT callback - user exists:", !!user, "account exists:", !!account);
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
     },
   },
   session: {

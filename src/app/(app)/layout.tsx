@@ -10,7 +10,13 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const session = await auth()
+  console.log("[AUTH DEBUG] AppLayout - Session check:", {
+    hasSession: !!session,
+    userId: session?.user?.id,
+    userEmail: session?.user?.email,
+  })
   if (!session) {
+    console.log("[AUTH DEBUG] AppLayout - No session, redirecting to signin")
     redirect('/auth/signin')
   }
   return (
