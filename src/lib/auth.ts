@@ -4,20 +4,35 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "./prisma";
 
-// 環境変数の検証（デバッグ用）
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+// 環境変数の明示的な読み込み
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+const nextAuthSecret = process.env.NEXTAUTH_SECRET?.trim();
+const nextAuthUrl = process.env.NEXTAUTH_URL?.trim();
 
-if (!googleClientId || !googleClientSecret) {
-  throw new Error(
-    "Missing required environment variables: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET"
-  );
+// 必須環境変数の検証
+if (!googleClientId) {
+  throw new Error("GOOGLE_CLIENT_ID environment variable is not set");
+}
+if (!googleClientSecret) {
+  throw new Error("GOOGLE_CLIENT_SECRET environment variable is not set");
+}
+if (!nextAuthSecret) {
+  throw new Error("NEXTAUTH_SECRET environment variable is not set");
+}
+if (!nextAuthUrl) {
+  throw new Error("NEXTAUTH_URL environment variable is not set");
 }
 
-// クライアントIDの一部をログ出力（デバッグ用、後で削除推奨）
-// 一時的に本番環境でも出力して確認
-console.log("[AUTH DEBUG] GOOGLE_CLIENT_ID starts with:", googleClientId.substring(0, 35) + "...");
-console.log("[AUTH DEBUG] Expected ID should start with: 259584654504-h86ohpa6trnsif0falig3qssg55r7aap");
+// デバッグログ
+console.log("[AUTH DEBUG] ========================================");
+console.log("[AUTH DEBUG] Loading NextAuth configuration...");
+console.log("[AUTH DEBUG] GOOGLE_CLIENT_ID:", googleClientId.substring(0, 40) + "...");
+console.log("[AUTH DEBUG] Expected starts with: 259584654504-h86ohpa6trnsif0falig3qssg55r7aap");
+console.log("[AUTH DEBUG] ID Match:", googleClientId.startsWith("259584654504-h86ohpa6trnsif0falig3qssg55r7aap"));
+console.log("[AUTH DEBUG] NEXTAUTH_URL:", nextAuthUrl);
+console.log("[AUTH DEBUG] Expected redirect URI:", `${nextAuthUrl}/api/auth/callback/google`);
+console.log("[AUTH DEBUG] ========================================");
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -38,17 +53,35 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // リダイレクトURIの確認
+      console.log("[AUTH DEBUG] Redirect callback - url:", url, "baseUrl:", baseUrl);
+      // カスタムリダイレクトURLがある場合はそれを使用
+      if (url.startsWith(baseUrl)) return url;
+      // デフォルトはトップページにリダイレクト
+      return baseUrl;
+    },
     async session({ session, user }) {
       if (session.user && user) {
         session.user.id = user.id;
       }
       return session;
     },
+    async signIn({ account, profile }) {
+      // サインイン時のデバッグ情報
+      console.log("[AUTH DEBUG] SignIn callback triggered");
+      if (account) {
+        console.log("[AUTH DEBUG] Provider:", account.provider);
+        console.log("[AUTH DEBUG] Using Client ID:", googleClientId.substring(0, 40) + "...");
+      }
+      return true;
+    },
   },
   session: {
     strategy: "database",
   },
-  secret: process.env.NEXTAUTH_SECRET!,
+  secret: nextAuthSecret,
+  debug: true, // デバッグモードを有効化
 };
 
 export async function auth() {
