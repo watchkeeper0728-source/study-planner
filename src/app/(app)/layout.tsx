@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { TopNav, MobileBottomNav } from '@/components/TopNav'
+import { TopNav } from '@/components/TopNav'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { Toaster } from '@/components/ui/sonner'
 
 export default async function AppLayout({
