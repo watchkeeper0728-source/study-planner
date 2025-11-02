@@ -1,6 +1,6 @@
 {
-  "name": "カレンダー連携ToDo & 習慣トラッカー",
-  "short_name": "ToDo習慣",
+  "name": "study-planner",
+  "short_name": "study-planner",
   "description": "Google Calendarと連携したタスク・習慣管理アプリ",
   "start_url": "/",
   "display": "standalone",
