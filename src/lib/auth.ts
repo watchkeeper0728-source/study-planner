@@ -24,15 +24,17 @@ if (!nextAuthUrl) {
   throw new Error("NEXTAUTH_URL environment variable is not set");
 }
 
-// デバッグログ
-console.log("[AUTH DEBUG] ========================================");
-console.log("[AUTH DEBUG] Loading NextAuth configuration...");
-console.log("[AUTH DEBUG] GOOGLE_CLIENT_ID:", googleClientId.substring(0, 40) + "...");
-console.log("[AUTH DEBUG] Expected starts with: 259584654504-h86ohpa6trnsif0falig3qssg55r7aap");
-console.log("[AUTH DEBUG] ID Match:", googleClientId.startsWith("259584654504-h86ohpa6trnsif0falig3qssg55r7aap"));
-console.log("[AUTH DEBUG] NEXTAUTH_URL:", nextAuthUrl);
-console.log("[AUTH DEBUG] Expected redirect URI:", `${nextAuthUrl}/api/auth/callback/google`);
-console.log("[AUTH DEBUG] ========================================");
+// 本番環境ではデバッグログを無効化
+const isDebugMode = process.env.NODE_ENV === 'development' || process.env.ENABLE_AUTH_DEBUG === 'true';
+
+if (isDebugMode) {
+  console.log("[AUTH DEBUG] ========================================");
+  console.log("[AUTH DEBUG] Loading NextAuth configuration...");
+  console.log("[AUTH DEBUG] GOOGLE_CLIENT_ID:", googleClientId.substring(0, 40) + "...");
+  console.log("[AUTH DEBUG] NEXTAUTH_URL:", nextAuthUrl);
+  console.log("[AUTH DEBUG] Expected redirect URI:", `${nextAuthUrl}/api/auth/callback/google`);
+  console.log("[AUTH DEBUG] ========================================");
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -54,8 +56,6 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async redirect({ url, baseUrl }) {
-      // リダイレクトURIの確認
-      console.log("[AUTH DEBUG] Redirect callback - url:", url, "baseUrl:", baseUrl);
       // カスタムリダイレクトURLがある場合はそれを使用
       if (url.startsWith(baseUrl)) return url;
       // デフォルトはトップページにリダイレクト
@@ -68,12 +68,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async signIn({ account, profile }) {
-      // サインイン時のデバッグ情報
-      console.log("[AUTH DEBUG] SignIn callback triggered");
-      if (account) {
-        console.log("[AUTH DEBUG] Provider:", account.provider);
-        console.log("[AUTH DEBUG] Using Client ID:", googleClientId.substring(0, 40) + "...");
-      }
+      // 本番環境ではすべてのユーザーを許可
       return true;
     },
   },
@@ -81,7 +76,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "database",
   },
   secret: nextAuthSecret,
-  debug: true, // デバッグモードを有効化
+  debug: isDebugMode, // デバッグモードは開発環境のみ
 };
 
 export async function auth() {
