@@ -213,6 +213,19 @@ export const authOptions: NextAuthOptions = {
       console.log("[AUTH DEBUG] Event - Account provider:", account?.provider);
       console.log("[AUTH DEBUG] ==========================================");
     },
+    async signInError({ error }) {
+      console.error("[AUTH DEBUG] ========== Event: signInError ==========");
+      console.error("[AUTH DEBUG] Event - Error:", error);
+      console.error("[AUTH DEBUG] Event - Error name:", error?.name);
+      console.error("[AUTH DEBUG] Event - Error message:", error?.message);
+      console.error("[AUTH DEBUG] ==========================================");
+    },
+    async sessionError({ error, message }) {
+      console.error("[AUTH DEBUG] ========== Event: sessionError ==========");
+      console.error("[AUTH DEBUG] Event - Error:", error);
+      console.error("[AUTH DEBUG] Event - Message:", message);
+      console.error("[AUTH DEBUG] ============================================");
+    },
   },
 };
 
