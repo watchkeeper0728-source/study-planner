@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   pages: {
     signIn: "/auth/signin",
+    error: "/auth/error",
   },
   providers: [
     GoogleProvider({
@@ -109,6 +110,42 @@ export const authOptions: NextAuthOptions = {
   },
   secret: nextAuthSecret,
   debug: isDebugMode, // デバッグモードは開発環境のみ
+  events: {
+    async signIn({ user, account, profile }) {
+      if (isDebugMode) {
+        console.log("[AUTH DEBUG] ========== Event: signIn ==========");
+        console.log("[AUTH DEBUG] User:", user?.email || "NO USER");
+        console.log("[AUTH DEBUG] Account provider:", account?.provider || "NO ACCOUNT");
+        console.log("[AUTH DEBUG] Profile email:", profile?.email || "NO PROFILE");
+        console.log("[AUTH DEBUG] =====================================");
+      }
+    },
+    async createUser({ user }) {
+      if (isDebugMode) {
+        console.log("[AUTH DEBUG] ========== Event: createUser ==========");
+        console.log("[AUTH DEBUG] New user created:", user?.email || "NO USER");
+        console.log("[AUTH DEBUG] User ID:", user?.id || "NO ID");
+        console.log("[AUTH DEBUG] ========================================");
+      }
+    },
+    async linkAccount({ account, user }) {
+      if (isDebugMode) {
+        console.log("[AUTH DEBUG] ========== Event: linkAccount ==========");
+        console.log("[AUTH DEBUG] Account linked for user:", user?.email || "NO USER");
+        console.log("[AUTH DEBUG] Account provider:", account?.provider || "NO ACCOUNT");
+        console.log("[AUTH DEBUG] Provider account ID:", account?.providerAccountId || "NO ID");
+        console.log("[AUTH DEBUG] =========================================");
+      }
+    },
+    async createSession({ session, user }) {
+      if (isDebugMode) {
+        console.log("[AUTH DEBUG] ========== Event: createSession ==========");
+        console.log("[AUTH DEBUG] Session created for user:", user?.email || "NO USER");
+        console.log("[AUTH DEBUG] Session token:", session?.sessionToken?.substring(0, 20) + "..." || "NO TOKEN");
+        console.log("[AUTH DEBUG] ===========================================");
+      }
+    },
+  },
 };
 
 export async function auth() {
