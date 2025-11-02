@@ -166,8 +166,12 @@ export const authOptions: NextAuthOptions = {
       // サインイン時のデバッグ情報
       try {
         console.log("[AUTH DEBUG] ========== SignIn callback triggered ==========");
-        console.log("[AUTH DEBUG] User:", user?.email || "NO USER");
+        console.log("[AUTH DEBUG] User exists:", !!user);
+        console.log("[AUTH DEBUG] User email:", user?.email || "NO USER");
+        console.log("[AUTH DEBUG] User id:", user?.id || "NO USER ID");
+        console.log("[AUTH DEBUG] Account exists:", !!account);
         console.log("[AUTH DEBUG] Account provider:", account?.provider || "NO ACCOUNT");
+        console.log("[AUTH DEBUG] Profile exists:", !!profile);
         console.log("[AUTH DEBUG] Profile email:", profile?.email || "NO PROFILE");
         if (account) {
           console.log("[AUTH DEBUG] Account type:", account.type);
@@ -175,8 +179,10 @@ export const authOptions: NextAuthOptions = {
         }
         console.log("[AUTH DEBUG] ==============================================");
         return true;
-      } catch (error) {
+      } catch (error: any) {
         console.error("[AUTH DEBUG] SignIn callback ERROR:", error);
+        console.error("[AUTH DEBUG] SignIn callback ERROR message:", error?.message);
+        console.error("[AUTH DEBUG] SignIn callback ERROR stack:", error?.stack);
         return false;
       }
     },
@@ -212,19 +218,6 @@ export const authOptions: NextAuthOptions = {
       console.log("[AUTH DEBUG] Event - User:", user?.email);
       console.log("[AUTH DEBUG] Event - Account provider:", account?.provider);
       console.log("[AUTH DEBUG] ==========================================");
-    },
-    async signInError({ error }) {
-      console.error("[AUTH DEBUG] ========== Event: signInError ==========");
-      console.error("[AUTH DEBUG] Event - Error:", error);
-      console.error("[AUTH DEBUG] Event - Error name:", error?.name);
-      console.error("[AUTH DEBUG] Event - Error message:", error?.message);
-      console.error("[AUTH DEBUG] ==========================================");
-    },
-    async sessionError({ error, message }) {
-      console.error("[AUTH DEBUG] ========== Event: sessionError ==========");
-      console.error("[AUTH DEBUG] Event - Error:", error);
-      console.error("[AUTH DEBUG] Event - Message:", message);
-      console.error("[AUTH DEBUG] ============================================");
     },
   },
 };
