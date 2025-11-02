@@ -56,18 +56,50 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async redirect({ url, baseUrl }) {
+      if (isDebugMode) {
+        console.log("[AUTH DEBUG] Redirect callback - url:", url, "baseUrl:", baseUrl);
+      }
       // カスタムリダイレクトURLがある場合はそれを使用
-      if (url.startsWith(baseUrl)) return url;
+      if (url.startsWith(baseUrl)) {
+        if (isDebugMode) {
+          console.log("[AUTH DEBUG] Redirecting to custom URL:", url);
+        }
+        return url;
+      }
       // デフォルトはトップページにリダイレクト
+      if (isDebugMode) {
+        console.log("[AUTH DEBUG] Redirecting to baseUrl:", baseUrl);
+      }
       return baseUrl;
     },
     async session({ session, user }) {
+      if (isDebugMode) {
+        console.log("[AUTH DEBUG] Session callback - session exists:", !!session, "user exists:", !!user);
+        console.log("[AUTH DEBUG] Session user email:", session?.user?.email);
+        console.log("[AUTH DEBUG] User id:", user?.id);
+      }
       if (session.user && user) {
         session.user.id = user.id;
+        if (isDebugMode) {
+          console.log("[AUTH DEBUG] Session user ID set to:", user.id);
+        }
+      } else {
+        if (isDebugMode) {
+          console.error("[AUTH DEBUG] WARNING: Session or user is missing!");
+        }
       }
       return session;
     },
-    async signIn({ account, profile }) {
+    async signIn({ account, profile, user }) {
+      if (isDebugMode) {
+        console.log("[AUTH DEBUG] ========== SignIn callback triggered ==========");
+        console.log("[AUTH DEBUG] User exists:", !!user);
+        console.log("[AUTH DEBUG] User email:", user?.email || "NO USER");
+        console.log("[AUTH DEBUG] User id:", user?.id || "NO USER ID");
+        console.log("[AUTH DEBUG] Profile email:", profile?.email || "NO PROFILE");
+        console.log("[AUTH DEBUG] Account provider:", account?.provider || "NO ACCOUNT");
+        console.log("[AUTH DEBUG] ==============================================");
+      }
       // 本番環境ではすべてのユーザーを許可
       return true;
     },
