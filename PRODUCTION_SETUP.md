@@ -29,14 +29,47 @@
 
 ## 2. 環境変数の確認
 
+### 2.1 重要な注意事項
+
+**⚠️ ログイン画面で別のアプリ名（例: "folder-rules-sync"）が表示される場合**
+
+これは、`GOOGLE_CLIENT_ID`環境変数が誤ったプロジェクトのOAuth Client IDに設定されている可能性があります。
+
+**正しいOAuth Client IDの形式:**
+- 先頭が `259584654504-h86ohpa6trnsif0falig3qssg55r7aap` で始まる
+- Google Cloud Consoleの「study-planner」プロジェクトから取得したもの
+
+**確認方法:**
+
+1. 以下のエンドポイントで現在の設定を確認（一時的にデバッグモードを有効化）：
+   ```
+   https://project-omega-weld.vercel.app/api/auth/verify-config
+   ```
+   ※ デバッグモードが無効な場合は、Vercelの環境変数で `ENABLE_AUTH_DEBUG=true` を設定
+
+2. Vercelダッシュボードで `GOOGLE_CLIENT_ID` を確認：
+   - 「study-planner」プロジェクトのOAuth Client IDであることを確認
+   - 誤った場合は、Google Cloud Consoleから正しいClient IDを取得して更新
+
+### 2.2 必要な環境変数
+
 Vercelダッシュボードで以下の環境変数が正しく設定されていることを確認：
 
-- `GOOGLE_CLIENT_ID` - Google OAuth Client ID
-- `GOOGLE_CLIENT_SECRET` - Google OAuth Client Secret
+- `GOOGLE_CLIENT_ID` - Google OAuth Client ID（**「study-planner」プロジェクトのもの**）
+- `GOOGLE_CLIENT_SECRET` - Google OAuth Client Secret（**「study-planner」プロジェクトのもの**）
 - `NEXTAUTH_URL` - 本番URL（例: `https://project-omega-weld.vercel.app`）
 - `NEXTAUTH_SECRET` - NextAuth用の秘密鍵
 - `DATABASE_URL` - PostgreSQLデータベースURL
 - `TZ` - タイムゾーン（例: `Asia/Tokyo`）
+
+### 2.3 正しいOAuth Client IDの取得方法
+
+1. [Google Cloud Console](https://console.cloud.google.com/)にアクセス
+2. **「study-planner」プロジェクト**を選択（重要）
+3. 「APIとサービス」→「認証情報」を開く
+4. 「OAuth 2.0 クライアントID」セクションを確認
+5. 正しいClient IDをコピー（先頭が `259584654504-h86ohpa6trnsif0falig3qssg55r7aap` で始まる）
+6. Vercelダッシュボードで `GOOGLE_CLIENT_ID` 環境変数を更新
 
 ## 3. セキュリティ設定
 
