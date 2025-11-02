@@ -190,6 +190,14 @@ export const authOptions: NextAuthOptions = {
           console.log("[AUTH DEBUG] Account providerAccountId:", account.providerAccountId);
         }
         console.log("[AUTH DEBUG] ==============================================");
+        
+        // 既存ユーザーでアカウントがリンクされていない場合の処理
+        if (user && account) {
+          // ユーザーが既に存在し、アカウントが提供されている場合
+          // NextAuthが自動的にlinkAccountを呼ぶはずだが、呼ばれていない可能性がある
+          console.log("[AUTH DEBUG] Existing user with account - NextAuth should handle linking");
+        }
+        
         return true;
       } catch (error: any) {
         console.error("[AUTH DEBUG] SignIn callback ERROR:", error);

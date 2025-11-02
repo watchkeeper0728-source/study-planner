@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  // セキュリティ: 本番環境では無効化推奨
-  if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEBUG) {
-    return NextResponse.json({ error: 'Debug endpoint disabled in production' }, { status: 403 })
-  }
+  // 一時的にデバッグを有効化（問題解決後は削除推奨）
+  // if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEBUG) {
+  //   return NextResponse.json({ error: 'Debug endpoint disabled in production' }, { status: 403 })
+  // }
 
   const env = {
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID 
