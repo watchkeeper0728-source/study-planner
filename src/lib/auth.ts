@@ -92,15 +92,27 @@ const wrappedAdapter = {
   },
   async linkAccount(account: any) {
     try {
-      console.log("[AUTH DEBUG] Adapter linkAccount called with provider:", account?.provider);
+      console.log("[AUTH DEBUG] ========== Adapter linkAccount called ==========");
+      console.log("[AUTH DEBUG] Account provider:", account?.provider);
+      console.log("[AUTH DEBUG] Account type:", account?.type);
+      console.log("[AUTH DEBUG] Account providerAccountId:", account?.providerAccountId);
+      console.log("[AUTH DEBUG] Account userId:", account?.userId);
+      console.log("[AUTH DEBUG] Account has refresh_token_expires_in:", 'refresh_token_expires_in' in (account || {}));
+      if (account?.refresh_token_expires_in !== undefined) {
+        console.log("[AUTH DEBUG] Account refresh_token_expires_in value:", account.refresh_token_expires_in);
+      }
       if (!baseAdapter.linkAccount) throw new Error("linkAccount method not found");
       const result = await baseAdapter.linkAccount(account);
       console.log("[AUTH DEBUG] Adapter linkAccount success");
+      console.log("[AUTH DEBUG] =================================================");
       return result;
     } catch (error: any) {
+      console.error("[AUTH DEBUG] ========== Adapter linkAccount ERROR ==========");
       console.error("[AUTH DEBUG] Adapter linkAccount ERROR:", error);
       console.error("[AUTH DEBUG] Adapter linkAccount ERROR message:", error?.message);
+      console.error("[AUTH DEBUG] Adapter linkAccount ERROR code:", error?.code);
       console.error("[AUTH DEBUG] Adapter linkAccount ERROR stack:", error?.stack);
+      console.error("[AUTH DEBUG] ===============================================");
       throw error;
     }
   },
