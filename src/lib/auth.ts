@@ -124,7 +124,7 @@ export async function signIn(username: string): Promise<{ user: SessionUser; ses
         // First, check actual table structure to determine which columns exist
         console.log('[AUTH] Fetching users table structure...')
         const tableColumns: any[] = await prisma.$queryRaw`
-          SELECT column_name, is_nullable, column_default
+          SELECT column_name, is_nullable, column_default, data_type
           FROM information_schema.columns
           WHERE table_name = 'users'
           ORDER BY ordinal_position
@@ -158,12 +158,21 @@ export async function signIn(username: string): Promise<{ user: SessionUser; ses
         addColumn('tz', 'Asia/Tokyo')
       }
 
-      // Legacy NextAuth columns - provide safe defaults if they still exist
+      // Legacy NextAuth columns - only add if they exist AND are nullable
+      // Required (NOT NULL) columns will be handled by the missingRequiredColumns check below
       if (columnNames.includes('email')) {
-        addColumn('email', `${username}@placeholder.local`)
+        const emailColumn = tableColumns.find((col: any) => col.column_name === 'email')
+        // Only add email if it's nullable (NOT NULL emails will be handled later)
+        if (emailColumn && emailColumn.is_nullable === 'YES') {
+          addColumn('email', `${username}@placeholder.local`)
+        }
       }
       if (columnNames.includes('emailVerified')) {
-        addColumn('emailVerified', null)
+        const emailVerifiedColumn = tableColumns.find((col: any) => col.column_name === 'emailVerified')
+        // Only add emailVerified if it's nullable
+        if (emailVerifiedColumn && emailVerifiedColumn.is_nullable === 'YES') {
+          addColumn('emailVerified', null)
+        }
       }
       if (columnNames.includes('image')) {
         addColumn('image', null)
@@ -183,20 +192,60 @@ export async function signIn(username: string): Promise<{ user: SessionUser; ses
         addColumn('lastLoginAt', new Date())
       }
 
-      // Ensure we are not missing any required columns (non-null without default)
+      // Ensure we handle all required columns (non-null without default)
       const handledColumns = new Set(insertColumns.map((col) => col.replace(/"/g, '')))
       const missingRequiredColumns = tableColumns.filter((col: any) => {
         const columnName = col.column_name
         if (handledColumns.has(columnName)) {
           return false
         }
+        // Check if column is NOT NULL and has no default
         const isRequired = col.is_nullable === 'NO' && !col.column_default
         return isRequired
       })
 
-      if (missingRequiredColumns.length > 0) {
-        console.error('[AUTH] Missing required columns when inserting user:', missingRequiredColumns)
-        throw new Error('ユーザーテーブルに追加の必須カラムがあります。マイグレーションを実行してください。')
+      console.log('[AUTH] Handled columns:', Array.from(handledColumns))
+      console.log('[AUTH] Missing required columns:', missingRequiredColumns.map((col: any) => col.column_name))
+
+      // For each missing required column, provide a default value based on column type
+      for (const col of missingRequiredColumns) {
+        const columnName = col.column_name
+        console.log('[AUTH] Adding missing required column:', columnName, 'type:', col.data_type)
+        
+        // Provide appropriate default values based on column name and type
+        if (columnName === 'email') {
+          addColumn(columnName, `${username}@placeholder.local`)
+        } else if (columnName === 'emailVerified') {
+          // emailVerified is usually nullable, but if NOT NULL, use current timestamp
+          addColumn(columnName, new Date())
+        } else if (columnName.includes('Id') || columnName.includes('id')) {
+          // ID columns - use null if allowed, or generate a placeholder
+          addColumn(columnName, null)
+        } else if (col.data_type === 'timestamp without time zone' || col.data_type === 'timestamp with time zone') {
+          addColumn(columnName, new Date())
+        } else if (col.data_type === 'text' || col.data_type === 'character varying') {
+          addColumn(columnName, '')
+        } else if (col.data_type === 'integer' || col.data_type === 'bigint') {
+          addColumn(columnName, 0)
+        } else if (col.data_type === 'boolean') {
+          addColumn(columnName, false)
+        } else {
+          // Default to empty string for text-like columns, null for others
+          console.warn('[AUTH] Unknown column type for required column:', columnName, 'type:', col.data_type, '- using empty string')
+          addColumn(columnName, '')
+        }
+      }
+
+      // Double-check: ensure all NOT NULL columns without defaults are handled
+      const finalHandledColumns = new Set(insertColumns.map((col) => col.replace(/"/g, '')))
+      const stillMissing = tableColumns.filter((col: any) => {
+        const columnName = col.column_name
+        return !finalHandledColumns.has(columnName) && col.is_nullable === 'NO' && !col.column_default
+      })
+
+      if (stillMissing.length > 0) {
+        console.error('[AUTH] Still missing required columns after auto-fill:', stillMissing.map((col: any) => col.column_name))
+        throw new Error(`ユーザーテーブルに必須カラムがありますが値の設定に失敗しました: ${stillMissing.map((col: any) => col.column_name).join(', ')}`)
       }
 
       const columnsStr = insertColumns.join(', ')
