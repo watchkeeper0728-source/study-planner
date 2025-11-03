@@ -255,10 +255,60 @@ export async function signIn(username: string): Promise<{ user: SessionUser; ses
     expires.setDate(expires.getDate() + SESSION_EXPIRES_DAYS)
     console.log('[AUTH] Session expires at:', expires)
 
-    await prisma.$executeRaw`
-      INSERT INTO sessions (id, "sessionToken", "userId", expires, "createdAt", "updatedAt")
-      VALUES (gen_random_uuid()::text, ${sessionToken}, ${user.id}, ${expires}, NOW(), NOW())
+    // Check actual sessions table structure to determine which columns exist
+    console.log('[AUTH] Fetching sessions table structure...')
+    const sessionColumns: any[] = await prisma.$queryRaw`
+      SELECT column_name, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_name = 'sessions'
+      ORDER BY ordinal_position
     `
+    console.log('[AUTH] Sessions table columns:', JSON.stringify(sessionColumns.map((col: any) => ({
+      name: col.column_name,
+      nullable: col.is_nullable,
+      default: col.column_default
+    })), null, 2))
+
+    const sessionColumnNames = sessionColumns.map((col: any) => col.column_name)
+    
+    // Build INSERT statement dynamically based on actual table structure
+    const sessionInsertColumns: string[] = []
+    const sessionInsertValues: any[] = []
+    
+    // Always include required columns
+    if (sessionColumnNames.includes('id')) {
+      sessionInsertColumns.push('id')
+      sessionInsertValues.push('c' + randomBytes(16).toString('base64url').substring(0, 24).replace(/[+\/=]/g, ''))
+    }
+    sessionInsertColumns.push('"sessionToken"')
+    sessionInsertValues.push(sessionToken)
+    sessionInsertColumns.push('"userId"')
+    sessionInsertValues.push(user.id)
+    if (sessionColumnNames.includes('expires')) {
+      sessionInsertColumns.push('expires')
+      sessionInsertValues.push(expires)
+    }
+    
+    // Optional timestamp columns
+    if (sessionColumnNames.includes('createdAt')) {
+      sessionInsertColumns.push('"createdAt"')
+      sessionInsertValues.push(new Date())
+    }
+    if (sessionColumnNames.includes('updatedAt')) {
+      sessionInsertColumns.push('"updatedAt"')
+      sessionInsertValues.push(new Date())
+    }
+
+    const sessionColumnsStr = sessionInsertColumns.join(', ')
+    const sessionPlaceholders = sessionInsertValues.map((_, i) => `$${i + 1}`).join(', ')
+
+    console.log('[AUTH] INSERT sessions columns:', sessionColumnsStr)
+    console.log('[AUTH] INSERT sessions SQL:', `INSERT INTO sessions (${sessionColumnsStr}) VALUES (${sessionPlaceholders})`)
+
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO sessions (${sessionColumnsStr}) VALUES (${sessionPlaceholders})`,
+      ...sessionInsertValues
+    )
     console.log('[AUTH] Session created successfully')
 
     const userUsername = user.username || user.id
