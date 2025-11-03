@@ -97,35 +97,45 @@ export async function signIn(username: string): Promise<{ user: SessionUser; ses
     console.log('[AUTH] User lookup result:', user ? 'found' : 'not found')
 
     if (!user) {
-      console.log('[AUTH] Creating new user using raw SQL')
-      // Generate a new ID using cuid format (similar to Prisma's default)
-      const idBytes = randomBytes(16)
-      const newId = 'c' + idBytes.toString('base64url').substring(0, 24).replace(/[+\/=]/g, '')
-      
-      // Check if username column exists before inserting
-      const columnCheck: any[] = await prisma.$queryRaw`
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'users'
-        AND column_name = 'username'
-        LIMIT 1
-      `
-      
-      if (columnCheck.length === 0) {
-        console.error('[AUTH] username column does not exist in database. Please run migration first.')
-        throw new Error('データベーススキーマが更新されていません。マイグレーションを実行してください。')
-      }
-      
-      // Create new user using raw SQL
-      // First, check actual table structure to determine which columns exist
-      const tableColumns: any[] = await prisma.$queryRaw`
-        SELECT column_name, is_nullable, column_default
-        FROM information_schema.columns
-        WHERE table_name = 'users'
-        ORDER BY ordinal_position
-      `
-      
-      console.log('[AUTH] Users table columns:', JSON.stringify(tableColumns, null, 2))
+      console.log('[AUTH] User not found, creating new user')
+      try {
+        // Generate a new ID using cuid format (similar to Prisma's default)
+        const idBytes = randomBytes(16)
+        const newId = 'c' + idBytes.toString('base64url').substring(0, 24).replace(/[+\/=]/g, '')
+        console.log('[AUTH] Generated user ID:', newId)
+        
+        // Check if username column exists before inserting
+        console.log('[AUTH] Checking if username column exists...')
+        const columnCheck: any[] = await prisma.$queryRaw`
+          SELECT column_name
+          FROM information_schema.columns
+          WHERE table_name = 'users'
+          AND column_name = 'username'
+          LIMIT 1
+        `
+        console.log('[AUTH] Username column check result:', columnCheck.length > 0 ? 'exists' : 'not found')
+        
+        if (columnCheck.length === 0) {
+          console.error('[AUTH] username column does not exist in database. Please run migration first.')
+          throw new Error('データベーススキーマが更新されていません。マイグレーションを実行してください。')
+        }
+        
+        // Create new user using raw SQL
+        // First, check actual table structure to determine which columns exist
+        console.log('[AUTH] Fetching users table structure...')
+        const tableColumns: any[] = await prisma.$queryRaw`
+          SELECT column_name, is_nullable, column_default
+          FROM information_schema.columns
+          WHERE table_name = 'users'
+          ORDER BY ordinal_position
+        `
+        
+        console.log('[AUTH] Users table columns count:', tableColumns.length)
+        console.log('[AUTH] Users table columns:', JSON.stringify(tableColumns.map((col: any) => ({
+          name: col.column_name,
+          nullable: col.is_nullable,
+          default: col.column_default
+        })), null, 2))
       
       // Build column list dynamically based on what exists
       const columnNames = tableColumns.map((col: any) => col.column_name)
@@ -192,23 +202,39 @@ export async function signIn(username: string): Promise<{ user: SessionUser; ses
       const columnsStr = insertColumns.join(', ')
       const placeholders = insertValues.map((_, i) => `$${i + 1}`).join(', ')
 
-      console.log('[AUTH] INSERT columns:', columnsStr)
-      console.log('[AUTH] INSERT values count:', insertValues.length)
+        console.log('[AUTH] INSERT columns:', columnsStr)
+        console.log('[AUTH] INSERT values count:', insertValues.length)
+        console.log('[AUTH] INSERT SQL:', `INSERT INTO users (${columnsStr}) VALUES (${placeholders})`)
 
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO users (${columnsStr}) VALUES (${placeholders})`,
-        ...insertValues
-      )
-      
-      // Fetch the created user
-      const newUsers: any[] = await prisma.$queryRaw`
-        SELECT id, username, name
-        FROM users
-        WHERE username = ${username}
-        LIMIT 1
-      `
-      user = newUsers[0]
-      console.log('[AUTH] New user created:', user.id)
+        console.log('[AUTH] Executing INSERT statement...')
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO users (${columnsStr}) VALUES (${placeholders})`,
+          ...insertValues
+        )
+        console.log('[AUTH] INSERT statement executed successfully')
+        
+        // Fetch the created user
+        console.log('[AUTH] Fetching created user from database...')
+        const newUsers: any[] = await prisma.$queryRaw`
+          SELECT id, username, name
+          FROM users
+          WHERE username = ${username}
+          LIMIT 1
+        `
+        console.log('[AUTH] Created user query result count:', newUsers.length)
+        if (newUsers.length === 0) {
+          throw new Error('ユーザー作成後、データベースから取得できませんでした')
+        }
+        user = newUsers[0]
+        console.log('[AUTH] New user created successfully:', user.id)
+      } catch (createError) {
+        console.error('[AUTH] Error creating new user:', createError)
+        if (createError instanceof Error) {
+          console.error('[AUTH] Create user error message:', createError.message)
+          console.error('[AUTH] Create user error stack:', createError.stack)
+        }
+        throw createError
+      }
     } else {
       console.log('[AUTH] Updating last login time for existing user')
       // Update last login time using raw SQL
