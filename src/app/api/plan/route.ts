@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { planSchema } from "@/lib/validators";
-import { upsertEvent, deleteEvent } from "@/lib/gcal";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -26,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     const plans = await prisma.plan.findMany({
       where: {
-        userId: session.user.id,
+        userId: session.id,
         start: {
           gte: new Date(from),
           lte: new Date(to),
@@ -52,9 +50,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -64,7 +62,7 @@ export async function POST(request: NextRequest) {
     const plan = await prisma.plan.create({
       data: {
         ...validatedData,
-        userId: session.user.id,
+        userId: session.id,
         start: new Date(validatedData.start),
         end: new Date(validatedData.end),
         subject: validatedData.subject,
@@ -72,26 +70,6 @@ export async function POST(request: NextRequest) {
     });
     
     console.log("Created plan:", plan);
-
-    // Googleカレンダーに同期
-    try {
-      const gcalEventId = await upsertEvent({
-        id: plan.id,
-        title: plan.title,
-        start: plan.start,
-        end: plan.end,
-        subject: plan.subject,
-        gcalEventId: null,
-      }, session.user.id);
-
-      await prisma.plan.update({
-        where: { id: plan.id },
-        data: { gcalEventId },
-      });
-    } catch (gcalError) {
-      console.error("Googleカレンダー同期エラー:", gcalError);
-      // エラーでもPlanは作成済みなので続行
-    }
 
     return NextResponse.json(plan, { status: 201 });
   } catch (error) {
@@ -112,34 +90,16 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
-    }
-
-    // ユーザーのすべてのPlanを削除
-    const plans = await prisma.plan.findMany({
-      where: {
-        userId: session.user.id,
-      },
-    });
-
-    // Googleカレンダーから削除
-    for (const plan of plans) {
-      if (plan.gcalEventId) {
-        try {
-          await deleteEvent(plan.gcalEventId, session.user.id);
-        } catch (gcalError) {
-          console.error("Googleカレンダー削除エラー:", gcalError);
-        }
-      }
     }
 
     // データベースから削除
     await prisma.plan.deleteMany({
       where: {
-        userId: session.user.id,
+        userId: session.id,
       },
     });
 

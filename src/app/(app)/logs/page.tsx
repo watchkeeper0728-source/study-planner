@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,8 @@ const subjectColors: Record<string, string> = {
 };
 
 export default function LogsPage() {
-  const { data: session, status } = useSession();
+  const { data: sessionData, status } = useAuth();
+  const session = sessionData?.session;
   const router = useRouter();
   const [logs, setLogs] = useState<StudyLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -224,5 +225,3 @@ export default function LogsPage() {
     </div>
   );
 }
-
-

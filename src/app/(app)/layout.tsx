@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { TopNav } from '@/components/TopNav'
 import { SideNav } from '@/components/SideNav'
@@ -10,18 +10,8 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth()
-  if (process.env.ENABLE_AUTH_DEBUG === 'true') {
-    console.log("[AUTH DEBUG] AppLayout - Session check:", {
-      hasSession: !!session,
-      userId: session?.user?.id,
-      userEmail: session?.user?.email,
-    })
-  }
+  const session = await getSession()
   if (!session) {
-    if (process.env.ENABLE_AUTH_DEBUG === 'true') {
-      console.log("[AUTH DEBUG] AppLayout - No session, redirecting to signin")
-    }
     redirect('/auth/signin')
   }
   return (

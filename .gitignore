@@ -3,12 +3,7 @@
 # dependencies
 /node_modules
 /.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+.pnp.js
 
 # testing
 /coverage
@@ -28,10 +23,12 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# local env files
+.env*.local
+.env
+.env.production
+.env.development
 
 # vercel
 .vercel
@@ -41,25 +38,10 @@ yarn-error.log*
 next-env.d.ts
 
 # prisma
-/prisma/migrations
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+prisma/migrations/*.sql
+!prisma/migrations/.gitkeep
 
-# vitest
-/coverage
-/vitest.config.ts.timestamp*
-
-# プロジェクト固有の除外
-folder-rules-sync/
-othello-app/
-splitfair/
-*.xlsx
-*.py
-*.msi
-*.zip
-"study log/"
-00_zenkoku_all.zip
-"法人番号付与_ローカル版.py"
-"【RIETI共有】中小企業_ローデータ.xlsx"
+# Other projects (should not be in this repo)
+/folder-rules-sync
+/othello-app
+/splitfair

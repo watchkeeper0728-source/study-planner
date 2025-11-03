@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { testSchema } from "@/lib/validators";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
     const tests = await prisma.test.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.id },
       orderBy: { date: "asc" },
     });
 
@@ -29,15 +28,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
     // 3件制限チェック
     const existingTests = await prisma.test.count({
-      where: { userId: session.user.id },
+      where: { userId: session.id },
     });
 
     if (existingTests >= 3) {
@@ -53,7 +52,7 @@ export async function POST(request: NextRequest) {
     const test = await prisma.test.create({
       data: {
         ...validatedData,
-        userId: session.user.id,
+        userId: session.id,
         date: new Date(validatedData.date),
       },
     });

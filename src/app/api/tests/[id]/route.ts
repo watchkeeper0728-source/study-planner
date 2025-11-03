@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
@@ -8,9 +7,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -18,7 +17,7 @@ export async function DELETE(
     await prisma.test.delete({
       where: {
         id: resolvedParams.id,
-        userId: session.user.id,
+        userId: session.id,
       },
     });
 

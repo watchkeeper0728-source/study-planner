@@ -1,13 +1,58 @@
 "use client";
 
-import { signIn, signOut, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { User, LogOut } from "lucide-react";
+import { toast } from "sonner";
+
+interface SessionUser {
+  id: string;
+  username: string;
+  name: string | null;
+}
 
 export function TopNav() {
-  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [session, setSession] = useState<SessionUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (status === "loading") {
+  useEffect(() => {
+    fetchSession();
+  }, []);
+
+  const fetchSession = async () => {
+    try {
+      const response = await fetch("/api/auth/session");
+      const data = await response.json();
+      setSession(data.user);
+    } catch (error) {
+      console.error("Failed to fetch session:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const response = await fetch("/api/auth/signout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        toast.success("ログアウトしました");
+        setSession(null);
+        router.push("/auth/signin");
+        router.refresh();
+      } else {
+        throw new Error("ログアウトに失敗しました");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "ログアウトに失敗しました");
+    }
+  };
+
+  if (isLoading) {
     return (
       <nav className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -21,31 +66,27 @@ export function TopNav() {
   }
 
   return (
-    <nav className="bg-white border-b">
+    <nav className="bg-white border-b fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold" aria-label="Study Planner">
             Study Planner
           </h1>
-          
+
           {session ? (
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                {session.user?.image && (
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name || "ユーザー"}
-                    className="h-8 w-8 rounded-full"
-                  />
-                )}
+                <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium text-sm">
+                  {(session.name || session.username)[0].toUpperCase()}
+                </div>
                 <span className="text-sm font-medium">
-                  {session.user?.name || session.user?.email}
+                  {session.name || session.username}
                 </span>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => signOut()}
+                onClick={handleSignOut}
                 aria-label="ログアウト"
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -54,11 +95,11 @@ export function TopNav() {
             </div>
           ) : (
             <Button
-              onClick={() => signIn("google", { callbackUrl: "/" })}
-              aria-label="Googleでログイン"
+              onClick={() => router.push("/auth/signin")}
+              aria-label="ログイン"
             >
               <User className="h-4 w-4 mr-2" />
-              Googleでログイン
+              ログイン
             </Button>
           )}
         </div>

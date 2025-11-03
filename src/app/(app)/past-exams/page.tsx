@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { PastExamsTable } from "@/components/PastExamsTable";
 import { PastExam } from "@prisma/client";
 import { toast } from "sonner";
 
 export default function PastExamsPage() {
-  const { data: session, status } = useSession();
+  const { data: sessionData, status } = useAuth();
+  const session = sessionData?.session;
   const [pastExams, setPastExams] = useState<PastExam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

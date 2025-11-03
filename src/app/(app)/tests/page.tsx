@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { TestResultFormNew } from "@/components/TestResultFormNew";
 import { ReflectionsList } from "@/components/ReflectionsList";
 import { Test, Reflection } from "@prisma/client";
@@ -12,7 +12,8 @@ interface ReflectionWithTest extends Reflection {
 }
 
 export default function TestsPage() {
-  const { data: session, status } = useSession();
+  const { data: sessionData, status } = useAuth();
+  const session = sessionData?.session;
   const [tests, setTests] = useState<Test[]>([]);
   const [reflections, setReflections] = useState<ReflectionWithTest[]>([]);
   const [isLoading, setIsLoading] = useState(true);

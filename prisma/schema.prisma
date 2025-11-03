@@ -14,24 +14,23 @@ enum Subject {
   SOCIAL
 }
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique // ユーザー名（一意）
+  name          String?   // 表示名
+  tz            String    @default("Asia/Tokyo")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime? // 最後のログイン時刻
+  todos         Todo[]
+  plans         Plan[]
+  logs          StudyLog[]
+  tests         Test[]
+  reflections   Reflection[]
+  pastExams     PastExam[]
+  sessions      Session[]
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
+  @@map("users")
 }
 
 model Session {
@@ -42,28 +41,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
-}
-
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  tz            String    @default("Asia/Tokyo")
-  gcalId        String?   // 専用カレンダーID
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  todos         Todo[]
-  plans         Plan[]
-  logs          StudyLog[]
-  tests         Test[]
-  reflections   Reflection[]
-  pastExams     PastExam[]
-
-  @@map("users")
 }
 
 model Todo {
@@ -92,7 +69,6 @@ model Plan {
   title       String
   start       DateTime
   end         DateTime
-  gcalEventId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

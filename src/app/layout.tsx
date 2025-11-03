@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "study-planner",
-  description: "学習計画管理アプリ - Google Calendarと連携したタスク・習慣管理",
+  description: "学習計画管理アプリ - タスク・習慣管理",
   applicationName: "study-planner",
   appleWebApp: {
     capable: true,

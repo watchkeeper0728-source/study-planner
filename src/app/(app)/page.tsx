@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { MiniWeekCalendar } from "@/components/MiniWeekCalendar";
 import { StudyTodoTabs } from "@/components/StudyTodoTabs";
@@ -18,7 +18,8 @@ interface ReflectionWithTest extends Reflection {
 }
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
+  const { data: sessionData, status } = useAuth();
+  const session = sessionData?.session;
   const router = useRouter();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [plans, setPlans] = useState<PlanWithSubject[]>([]);

@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { pastExamSchema } from "@/lib/validators";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
     const pastExams = await prisma.pastExam.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.id },
       orderBy: [
         { schoolName: "asc" },
         { year: "desc" },
@@ -33,9 +32,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -45,7 +44,7 @@ export async function POST(request: NextRequest) {
     const pastExam = await prisma.pastExam.create({
       data: {
         ...validatedData,
-        userId: session.user.id,
+        userId: session.id,
       },
     });
 
@@ -65,4 +64,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

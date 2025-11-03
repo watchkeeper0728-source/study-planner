@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { todoSchema } from "@/lib/validators";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
     const todos = await prisma.todo.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.id },
       orderBy: [
         { priority: "asc" },
         { createdAt: "desc" },
@@ -32,9 +31,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -44,7 +43,7 @@ export async function POST(request: NextRequest) {
     const todo = await prisma.todo.create({
       data: {
         ...validatedData,
-        userId: session.user.id,
+        userId: session.id,
       },
     });
 

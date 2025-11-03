@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { StudyTimeBar } from "@/components/StudyTimeBar";
 import { StudyLog } from "@prisma/client";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { toast } from "sonner";
 
 export default function AnalyticsPage() {
-  const { data: session, status } = useSession();
+  const { data: sessionData, status } = useAuth();
+  const session = sessionData?.session;
   const [logs, setLogs] = useState<StudyLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

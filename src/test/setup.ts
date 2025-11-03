@@ -14,17 +14,20 @@ vi.mock('next/navigation', () => ({
   },
 }))
 
-vi.mock('next-auth/react', () => ({
-  useSession() {
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth() {
     return {
       data: {
-        user: {
-          id: 'test-user-id',
-          name: 'Test User',
-          email: 'test@example.com',
+        session: {
+          user: {
+            id: 'test-user-id',
+            username: 'testuser',
+            name: 'Test User',
+          },
         },
       },
       status: 'authenticated',
+      refetch: vi.fn(),
     }
   },
 }))

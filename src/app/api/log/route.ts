@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { studyLogSchema } from "@/lib/validators";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     const logs = await prisma.studyLog.findMany({
       where: {
-        userId: session.user.id,
+        userId: session.id,
         date: {
           gte: new Date(from),
           lte: new Date(to),
@@ -47,9 +46,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
     const log = await prisma.studyLog.create({
       data: {
         ...validatedData,
-        userId: session.user.id,
+        userId: session.id,
         date: new Date(validatedData.date),
       },
     });

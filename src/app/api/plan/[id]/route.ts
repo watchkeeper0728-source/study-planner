@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { planSchema } from "@/lib/validators";
-import { upsertEvent, deleteEvent } from "@/lib/gcal";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -24,14 +22,14 @@ export async function PATCH(
       where: { id: resolvedParams.id },
     });
 
-    if (!existingPlan || existingPlan.userId !== session.user.id) {
+    if (!existingPlan || existingPlan.userId !== session.id) {
       return NextResponse.json({ error: "Planが見つかりません" }, { status: 404 });
     }
 
     const plan = await prisma.plan.update({
       where: {
         id: resolvedParams.id,
-        userId: session.user.id,
+        userId: session.id,
       },
       data: {
         ...validatedData,
@@ -39,27 +37,6 @@ export async function PATCH(
         end: validatedData.end ? new Date(validatedData.end) : undefined,
       },
     });
-
-    // Googleカレンダーに同期
-    try {
-      const gcalEventId = await upsertEvent({
-        id: plan.id,
-        title: plan.title,
-        start: plan.start,
-        end: plan.end,
-        subject: plan.subject,
-        gcalEventId: plan.gcalEventId,
-      }, session.user.id);
-
-      if (gcalEventId !== plan.gcalEventId) {
-        await prisma.plan.update({
-          where: { id: plan.id },
-          data: { gcalEventId },
-        });
-      }
-    } catch (gcalError) {
-      console.error("Googleカレンダー同期エラー:", gcalError);
-    }
 
     return NextResponse.json(plan);
   } catch (error) {
@@ -83,9 +60,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -94,23 +71,14 @@ export async function DELETE(
       where: { id: resolvedParams.id },
     });
 
-    if (!plan || plan.userId !== session.user.id) {
+    if (!plan || plan.userId !== session.id) {
       return NextResponse.json({ error: "Planが見つかりません" }, { status: 404 });
-    }
-
-    // Googleカレンダーから削除
-    if (plan.gcalEventId) {
-      try {
-        await deleteEvent(plan.gcalEventId, session.user.id);
-      } catch (gcalError) {
-        console.error("Googleカレンダー削除エラー:", gcalError);
-      }
     }
 
     await prisma.plan.delete({
       where: {
         id: resolvedParams.id,
-        userId: session.user.id,
+        userId: session.id,
       },
     });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { DailyReviewPane } from "@/components/DailyReviewPane";
 import { Subject, Plan, StudyLog } from "@prisma/client";
 import { format, startOfDay, endOfDay } from "date-fns";
@@ -12,7 +12,8 @@ interface PlanWithSubject extends Plan {
 }
 
 export default function ReviewPage() {
-  const { data: session, status } = useSession();
+  const { data: sessionData, status } = useAuth();
+  const session = sessionData?.session;
   const [plans, setPlans] = useState<PlanWithSubject[]>([]);
   const [logs, setLogs] = useState<StudyLog[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());

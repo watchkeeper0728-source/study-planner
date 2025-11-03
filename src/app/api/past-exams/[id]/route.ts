@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { pastExamSchema } from "@/lib/validators";
 
@@ -9,9 +8,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -27,7 +26,7 @@ export async function PATCH(
       return NextResponse.json({ error: "PastExamが見つかりません" }, { status: 404 });
     }
 
-    if (pastExam.userId !== session.user.id) {
+    if (pastExam.userId !== session.id) {
       return NextResponse.json({ error: "権限がありません" }, { status: 403 });
     }
 
@@ -58,9 +57,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -73,7 +72,7 @@ export async function DELETE(
       return NextResponse.json({ error: "PastExamが見つかりません" }, { status: 404 });
     }
 
-    if (pastExam.userId !== session.user.id) {
+    if (pastExam.userId !== session.id) {
       return NextResponse.json({ error: "権限がありません" }, { status: 403 });
     }
 
@@ -90,4 +89,3 @@ export async function DELETE(
     );
   }
 }
-
