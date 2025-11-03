@@ -130,28 +130,71 @@ export async function signIn(username: string): Promise<{ user: SessionUser; ses
       // Build column list dynamically based on what exists
       const columnNames = tableColumns.map((col: any) => col.column_name)
       
-      // Use explicit column list to avoid schema mismatches
-      // Include only columns that exist and are not auto-generated
-      const insertColumns = ['id', 'username', 'name', 'tz']
-      const insertValues = [newId, username, username, 'Asia/Tokyo']
-      
-      // Add createdAt and updatedAt if they exist
+      const insertColumns: string[] = []
+      const insertValues: any[] = []
+
+      const addColumn = (name: string, value: any) => {
+        insertColumns.push(`"${name}"`)
+        insertValues.push(value)
+      }
+
+      // Always set core columns
+      addColumn('id', newId)
+      addColumn('username', username)
+      if (columnNames.includes('name')) {
+        addColumn('name', username)
+      }
+      if (columnNames.includes('tz')) {
+        addColumn('tz', 'Asia/Tokyo')
+      }
+
+      // Legacy NextAuth columns - provide safe defaults if they still exist
+      if (columnNames.includes('email')) {
+        addColumn('email', `${username}@placeholder.local`)
+      }
+      if (columnNames.includes('emailVerified')) {
+        addColumn('emailVerified', null)
+      }
+      if (columnNames.includes('image')) {
+        addColumn('image', null)
+      }
+      if (columnNames.includes('gcalId')) {
+        addColumn('gcalId', null)
+      }
+
+      // Timestamp columns
       if (columnNames.includes('createdAt')) {
-        insertColumns.push('createdAt')
-        insertValues.push(new Date().toISOString())
+        addColumn('createdAt', new Date())
       }
       if (columnNames.includes('updatedAt')) {
-        insertColumns.push('updatedAt')
-        insertValues.push(new Date().toISOString())
+        addColumn('updatedAt', new Date())
       }
-      
-      // Build dynamic INSERT statement
-      const columnsStr = insertColumns.map(col => `"${col}"`).join(', ')
+      if (columnNames.includes('lastLoginAt')) {
+        addColumn('lastLoginAt', new Date())
+      }
+
+      // Ensure we are not missing any required columns (non-null without default)
+      const handledColumns = new Set(insertColumns.map((col) => col.replace(/"/g, '')))
+      const missingRequiredColumns = tableColumns.filter((col: any) => {
+        const columnName = col.column_name
+        if (handledColumns.has(columnName)) {
+          return false
+        }
+        const isRequired = col.is_nullable === 'NO' && !col.column_default
+        return isRequired
+      })
+
+      if (missingRequiredColumns.length > 0) {
+        console.error('[AUTH] Missing required columns when inserting user:', missingRequiredColumns)
+        throw new Error('ユーザーテーブルに追加の必須カラムがあります。マイグレーションを実行してください。')
+      }
+
+      const columnsStr = insertColumns.join(', ')
       const placeholders = insertValues.map((_, i) => `$${i + 1}`).join(', ')
-      
+
       console.log('[AUTH] INSERT columns:', columnsStr)
       console.log('[AUTH] INSERT values count:', insertValues.length)
-      
+
       await prisma.$executeRawUnsafe(
         `INSERT INTO users (${columnsStr}) VALUES (${placeholders})`,
         ...insertValues
