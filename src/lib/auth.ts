@@ -138,11 +138,11 @@ export async function signIn(username: string): Promise<{ user: SessionUser; ses
       // Add createdAt and updatedAt if they exist
       if (columnNames.includes('createdAt')) {
         insertColumns.push('createdAt')
-        insertValues.push(new Date())
+        insertValues.push(new Date().toISOString())
       }
       if (columnNames.includes('updatedAt')) {
         insertColumns.push('updatedAt')
-        insertValues.push(new Date())
+        insertValues.push(new Date().toISOString())
       }
       
       // Build dynamic INSERT statement
